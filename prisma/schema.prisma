@@ -1,0 +1,111 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String
+  nickname  String
+  tier      String   @default("bronze")
+  xp        Int      @default(0)
+  image     String?
+  createdAt DateTime @default(now())
+
+  participants  Participant[]
+  submissions   Submission[]
+  leaderboards  Leaderboard[]
+  posts         Post[]
+}
+
+model Challenge {
+  id               String   @id @default(cuid())
+  title            String
+  description      String
+  metric           String   @default("rmse") // rmse, f1, accuracy
+  rules            String   @default("")
+  status           String   @default("upcoming") // upcoming, active, ended
+  startAt          DateTime
+  endAt            DateTime
+  dailySubmitLimit Int      @default(5)
+  createdAt        DateTime @default(now())
+
+  datasets     Dataset[]
+  participants Participant[]
+  submissions  Submission[]
+  leaderboards Leaderboard[]
+  posts        Post[]
+}
+
+model Dataset {
+  id          String @id @default(cuid())
+  challengeId String
+  filePath    String
+  fileName    String
+  description String @default("")
+  license     String @default("")
+  version     String @default("1.0")
+
+  challenge Challenge @relation(fields: [challengeId], references: [id], onDelete: Cascade)
+}
+
+model Participant {
+  id          String   @id @default(cuid())
+  challengeId String
+  userId      String
+  joinedAt    DateTime @default(now())
+
+  challenge Challenge @relation(fields: [challengeId], references: [id], onDelete: Cascade)
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([challengeId, userId])
+}
+
+model Submission {
+  id           String   @id @default(cuid())
+  challengeId  String
+  userId       String
+  filePath     String
+  fileName     String
+  status       String   @default("pending") // pending, scoring, completed, error
+  scorePublic  Float?
+  scorePrivate Float?
+  log          String   @default("")
+  createdAt    DateTime @default(now())
+
+  challenge Challenge @relation(fields: [challengeId], references: [id], onDelete: Cascade)
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Leaderboard {
+  id          String   @id @default(cuid())
+  challengeId String
+  userId      String
+  bestScore   Float
+  rank        Int      @default(0)
+  updatedAt   DateTime @updatedAt
+
+  challenge Challenge @relation(fields: [challengeId], references: [id], onDelete: Cascade)
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([challengeId, userId])
+}
+
+model Post {
+  id          String   @id @default(cuid())
+  challengeId String
+  boardType   String   @default("discussion") // discussion, announcement, tip
+  authorId    String
+  title       String
+  body        String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  challenge Challenge @relation(fields: [challengeId], references: [id], onDelete: Cascade)
+  author    User      @relation(fields: [authorId], references: [id], onDelete: Cascade)
+}
