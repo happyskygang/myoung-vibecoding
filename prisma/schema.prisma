@@ -78,8 +78,9 @@ model Submission {
   log          String   @default("")
   createdAt    DateTime @default(now())
 
-  challenge Challenge @relation(fields: [challengeId], references: [id], onDelete: Cascade)
-  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  challenge      Challenge       @relation(fields: [challengeId], references: [id], onDelete: Cascade)
+  user           User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  evaluationJobs EvaluationJob[]
 }
 
 model Leaderboard {
@@ -108,4 +109,18 @@ model Post {
 
   challenge Challenge @relation(fields: [challengeId], references: [id], onDelete: Cascade)
   author    User      @relation(fields: [authorId], references: [id], onDelete: Cascade)
+}
+
+model EvaluationJob {
+  id           String    @id @default(cuid())
+  submissionId String
+  evalRunId    String    @default("") // External evaluation run ID (EvalAI or mock)
+  status       String    @default("pending") // pending, running, completed, failed
+  logPath      String    @default("")
+  log          String    @default("")
+  startedAt    DateTime?
+  finishedAt   DateTime?
+  createdAt    DateTime  @default(now())
+
+  submission Submission @relation(fields: [submissionId], references: [id], onDelete: Cascade)
 }
